@@ -95,8 +95,8 @@ indentation: str='    ', json_encoding=False) :
 
     start_time, end_time = gpx_part.get_time_bounds()
     if json_encoding:
-        out_object["Started"] = start_time
-        out_object["Ended"] = end_time
+        out_object["Started"] = start_time.strftime("%m/%d/%Y, %H:%M:%S")
+        out_object["Ended"] = end_time.strftime("%m/%d/%Y, %H:%M:%S")
     else:
         print(f'{indentation}Started: {start_time}')
         print(f'{indentation}Ended: {end_time}')
@@ -133,9 +133,12 @@ def print_gpx_info(gpx: mod_gpx.GPX, gpx_file: str, json_encoding = False) -> No
         print(f'File: {gpx_file}')
 
     if json_encoding:
-        out_obj["File Properties"] = gpx
+        out_obj["File Properties"] = {}
+        out_obj["File Properties"]["name"] = gpx.name
+        out_obj["File Properties"]["description"] = gpx.description
+        out_obj["File Properties"]["Author"] = gpx.author_name
+        out_obj["File Properties"]["Email"] = gpx.author_email
     else:
-        
         if gpx.name:
             print(f'  GPX name: {gpx.name}')
         if gpx.description:
@@ -146,18 +149,21 @@ def print_gpx_info(gpx: mod_gpx.GPX, gpx_file: str, json_encoding = False) -> No
             print(f'  Email: {gpx.author_email}')
 
     # if json_encoding:
-    out_obj['part info'] = print_gpx_part_info(gpx);
+    out_obj['part info'] = print_gpx_part_info(gpx, json_encoding=json_encoding);
     # print_gpx_part_info(gpx)
 
-    out_obj["tracks_segments"] = []
+    out_obj["tracks_segments"] = {}
 
     for track_no, track in enumerate(gpx.tracks):
         for segment_no, segment in enumerate(track.segments):
             if json_encoding:
-                out_obj["tracks_segments"][f'Track #{track_no}, Segment #{segment_no}'] = print_gpx_part_info(segment, json_encoding=True)
+                part_info = print_gpx_part_info(segment, json_encoding=True)
+                seg = f'Track #{track_no}, Segment #{segment_no}'
+                out_obj["tracks_segments"][seg] = part_info
             else:
                 print(f'    Track #{track_no}, Segment #{segment_no}')
                 print_gpx_part_info(segment, indentation='        ')
+    return out_obj
 
 
 def run(gpx_files: List[str], json_encoding = True) -> None:
@@ -165,11 +171,12 @@ def run(gpx_files: List[str], json_encoding = True) -> None:
         print('No GPX files given')
         mod_sys.exit(1)
 
-    out_array = []
+    out_array = {}
     for gpx_file in gpx_files:
         try:
             gpx = mod_gpxpy.parse(open(gpx_file))
-            out_array[gpx_file] = print_gpx_info(gpx, gpx_file, json_encoding=json_encoding)
+            info = print_gpx_info(gpx, gpx_file, json_encoding=json_encoding)
+            out_array[gpx_file] = info
         except Exception as e:
             mod_logging.exception(e)
             print(f'Error processing {gpx_file}')
