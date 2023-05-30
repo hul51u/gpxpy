@@ -16,6 +16,8 @@ import gpxpy.gpx as mod_gpx
 
 from typing import *
 
+import json
+
 KM_TO_MILES = 0.621371
 M_TO_FEET = 3.28084
 
@@ -54,33 +56,56 @@ def format_speed(speed: float) -> str:
         return f'{speed:.2f}m/s = {speed * 3600. / 1000.:.2f}km/h'
 
 
-def print_gpx_part_info(gpx_part: Union[mod_gpx.GPX, mod_gpx.GPXTrack, mod_gpx.GPXTrackSegment], indentation: str='    ') -> None:
+def print_gpx_part_info(gpx_part: Union[mod_gpx.GPX, mod_gpx.GPXTrack, mod_gpx.GPXTrackSegment],
+indentation: str='    ', json_encoding=False) :
     """
     gpx_part may be a track or segment.
     """
     length_2d = gpx_part.length_2d()
     length_3d = gpx_part.length_3d()
-    print(f'{indentation}Length 2D: {format_long_length(length_2d or 0)}')
-    print(f'{indentation}Length 3D: {format_long_length(length_3d)}')
+    out_object = {}
+    if json_encoding:
+        out_object["Length 2D"] = f'"{format_long_length(length_2d or 0)}", '
+        out_object["Length 3D"] = f'"{format_long_length(length_3d)}", '
+    else:
+        print(f'{indentation}Length 2D: {format_long_length(length_2d or 0)}')
+        print(f'{indentation}Length 3D: {format_long_length(length_3d)}')
 
     moving_data = gpx_part.get_moving_data()
     raw_moving_data = gpx_part.get_moving_data(raw=True)
     if moving_data:
-        print(f'{indentation}Moving time: {format_time(moving_data.moving_time)}')
-        print(f'{indentation}Stopped time: {format_time(moving_data.stopped_time)}')
-        print(f'{indentation}Max speed: {format_speed(moving_data.max_speed)} (raw: {format_speed(raw_moving_data.max_speed) if raw_moving_data else "?"})')
-        print(f'{indentation}Avg speed: {format_speed(moving_data.moving_distance / moving_data.moving_time) if moving_data.moving_time > 0 else "?"}')
+        if json_encoding:
+            out_object["Moving time"] = f'"{format_time(moving_data.moving_time)}", '
+            out_object["Stopped time"] = f'"{format_time(moving_data.stopped_time)}"'
+            out_object["Max speed"] = f'"{format_speed(moving_data.max_speed)} (raw: {format_speed(raw_moving_data.max_speed) if raw_moving_data else "?"})", '
+            out_object["Avg speed"] = f'"{format_speed(moving_data.moving_distance / moving_data.moving_time) if moving_data.moving_time > 0 else "?"}", '
+        else:
+            print(f'{indentation}Moving time: {format_time(moving_data.moving_time)}')
+            print(f'{indentation}Stopped time: {format_time(moving_data.stopped_time)}')
+            print(f'{indentation}Max speed: {format_speed(moving_data.max_speed)} (raw: {format_speed(raw_moving_data.max_speed) if raw_moving_data else "?"})')
+            print(f'{indentation}Avg speed: {format_speed(moving_data.moving_distance / moving_data.moving_time) if moving_data.moving_time > 0 else "?"}')
 
     uphill, downhill = gpx_part.get_uphill_downhill()
-    print(f'{indentation}Total uphill: {format_short_length(uphill)}')
-    print(f'{indentation}Total downhill: {format_short_length(downhill)}')
+    if json_encoding:
+        out_object["Total uphill"] = f'"{format_short_length(uphill)}", '
+        out_object["Total downhill"] = f'"{format_short_length(downhill)}", '
+    else:
+        print(f'{indentation}Total uphill: {format_short_length(uphill)}')
+        print(f'{indentation}Total downhill: {format_short_length(downhill)}')
 
     start_time, end_time = gpx_part.get_time_bounds()
-    print(f'{indentation}Started: {start_time}')
-    print(f'{indentation}Ended: {end_time}')
+    if json_encoding:
+        out_object["Started"] = start_time
+        out_object["Ended"] = end_time
+    else:
+        print(f'{indentation}Started: {start_time}')
+        print(f'{indentation}Ended: {end_time}')
 
     points_no = len(list(gpx_part.walk(only_points=True)))
-    print(f'{indentation}Points: {points_no}')
+    if json_encoding:
+        out_object["Points"] = points_no
+    else:
+        print(f'{indentation}Points: {points_no}')
 
     if points_no > 0:
         distances: List[float] = []
@@ -90,45 +115,67 @@ def print_gpx_part_info(gpx_part: Union[mod_gpx.GPX, mod_gpx.GPXTrack, mod_gpx.G
                 distance = point.distance_2d(previous_point)
                 distances.append(distance)
             previous_point = point
-        print(f'{indentation}Avg distance between points: {format_short_length(sum(distances) / len(list(gpx_part.walk())))}')
-
+        if json_encoding:
+            out_object["Avg distance between points"] = format_short_length(sum(distances) / len(list(gpx_part.walk())))
+        else:
+            print(f'{indentation}Avg distance between points: {format_short_length(sum(distances) / len(list(gpx_part.walk())))}')
+    if json_encoding:
+        return out_object
     print('')
+    return 0
 
 
-def print_gpx_info(gpx: mod_gpx.GPX, gpx_file: str) -> None:
-    print(f'File: {gpx_file}')
+def print_gpx_info(gpx: mod_gpx.GPX, gpx_file: str, json_encoding = False) -> None:
+    out_obj = {}
+    if json_encoding:
+        out_obj["File"] = gpx_file
+    else:
+        print(f'File: {gpx_file}')
 
-    if gpx.name:
-        print(f'  GPX name: {gpx.name}')
-    if gpx.description:
-        print(f'  GPX description: {gpx.description}')
-    if gpx.author_name:
-        print(f'  Author: {gpx.author_name}')
-    if gpx.author_email:
-        print(f'  Email: {gpx.author_email}')
+    if json_encoding:
+        out_obj["File Properties"] = gpx
+    else:
+        
+        if gpx.name:
+            print(f'  GPX name: {gpx.name}')
+        if gpx.description:
+            print(f'  GPX description: {gpx.description}')
+        if gpx.author_name:
+            print(f'  Author: {gpx.author_name}')
+        if gpx.author_email:
+            print(f'  Email: {gpx.author_email}')
 
-    print_gpx_part_info(gpx)
+    # if json_encoding:
+    out_obj['part info'] = print_gpx_part_info(gpx);
+    # print_gpx_part_info(gpx)
+
+    out_obj["tracks_segments"] = []
 
     for track_no, track in enumerate(gpx.tracks):
         for segment_no, segment in enumerate(track.segments):
-            print(f'    Track #{track_no}, Segment #{segment_no}')
-            print_gpx_part_info(segment, indentation='        ')
+            if json_encoding:
+                out_obj["tracks_segments"][f'Track #{track_no}, Segment #{segment_no}'] = print_gpx_part_info(segment, json_encoding=True)
+            else:
+                print(f'    Track #{track_no}, Segment #{segment_no}')
+                print_gpx_part_info(segment, indentation='        ')
 
 
-def run(gpx_files: List[str]) -> None:
+def run(gpx_files: List[str], json_encoding = True) -> None:
     if not gpx_files:
         print('No GPX files given')
         mod_sys.exit(1)
 
+    out_array = []
     for gpx_file in gpx_files:
         try:
             gpx = mod_gpxpy.parse(open(gpx_file))
-            print_gpx_info(gpx, gpx_file)
+            out_array[gpx_file] = print_gpx_info(gpx, gpx_file, json_encoding=json_encoding)
         except Exception as e:
             mod_logging.exception(e)
             print(f'Error processing {gpx_file}')
             mod_sys.exit(1)
-
+    if json_encoding:
+        print(json.dumps(out_array))
 
 def make_parser() -> mod_argparse.ArgumentParser:
     parser = mod_argparse.ArgumentParser(usage='%(prog)s [-s] [-m] [-d] [file ...]',
