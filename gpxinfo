@@ -95,8 +95,9 @@ indentation: str='    ', json_encoding=False) :
 
     start_time, end_time = gpx_part.get_time_bounds()
     if json_encoding:
-        out_object["Started"] = start_time.strftime("%m/%d/%Y, %H:%M:%S")
-        out_object["Ended"] = end_time.strftime("%m/%d/%Y, %H:%M:%S")
+        if start_time and end_time:
+            out_object["Started"] = start_time.strftime("%m/%d/%Y, %H:%M:%S")
+            out_object["Ended"] = end_time.strftime("%m/%d/%Y, %H:%M:%S")
     else:
         print(f'{indentation}Started: {start_time}')
         print(f'{indentation}Ended: {end_time}')
@@ -171,18 +172,20 @@ def run(gpx_files: List[str], json_encoding = True) -> None:
         print('No GPX files given')
         mod_sys.exit(1)
 
-    out_array = {}
+    out_obj = {}
     for gpx_file in gpx_files:
         try:
             gpx = mod_gpxpy.parse(open(gpx_file))
             info = print_gpx_info(gpx, gpx_file, json_encoding=json_encoding)
-            out_array[gpx_file] = info
+            out_obj[gpx_file] = info
         except Exception as e:
             mod_logging.exception(e)
+            out_obj[gpx_file] = 0
+            continue
             print(f'Error processing {gpx_file}')
             mod_sys.exit(1)
     if json_encoding:
-        print(json.dumps(out_array))
+        print(json.dumps(out_obj))
 
 def make_parser() -> mod_argparse.ArgumentParser:
     parser = mod_argparse.ArgumentParser(usage='%(prog)s [-s] [-m] [-d] [file ...]',
