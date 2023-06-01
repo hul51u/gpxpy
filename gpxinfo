@@ -174,7 +174,7 @@ def run(gpx_files: List[str], direct_print = False) -> None:
             direct_print(f'Error processing {gpx_file}')
             mod_sys.exit(1)
     if not direct_print:
-        print(json.dumps(out_obj))
+        print(json.dumps(out_obj), end='')
 
 def make_parser() -> mod_argparse.ArgumentParser:
     parser = mod_argparse.ArgumentParser(usage='%(prog)s [-s] [-m] [-d] [file ...]',
