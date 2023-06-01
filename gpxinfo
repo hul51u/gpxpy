@@ -64,8 +64,8 @@ indentation: str='    ', direct_print=False) :
     length_2d = gpx_part.length_2d()
     length_3d = gpx_part.length_3d()
     out_object = {}
-    out_object["Length 2D"] = f'"{format_long_length(length_2d or 0)}", '
-    out_object["Length 3D"] = f'"{format_long_length(length_3d)}", '
+    out_object["Length 2D"] = format_long_length(length_2d or 0)
+    out_object["Length 3D"] = format_long_length(length_3d)
     if direct_print:
         print(f'{indentation}Length 2D: {format_long_length(length_2d or 0)}')
         print(f'{indentation}Length 3D: {format_long_length(length_3d)}')
@@ -73,10 +73,10 @@ indentation: str='    ', direct_print=False) :
     moving_data = gpx_part.get_moving_data()
     raw_moving_data = gpx_part.get_moving_data(raw=True)
     if moving_data:
-        out_object["Moving time"] = f'"{format_time(moving_data.moving_time)}", '
-        out_object["Stopped time"] = f'"{format_time(moving_data.stopped_time)}"'
-        out_object["Max speed"] = f'"{format_speed(moving_data.max_speed)} (raw: {format_speed(raw_moving_data.max_speed) if raw_moving_data else "?"})", '
-        out_object["Avg speed"] = f'"{format_speed(moving_data.moving_distance / moving_data.moving_time) if moving_data.moving_time > 0 else "?"}", '
+        out_object["Moving time"] = format_time(moving_data.moving_time)
+        out_object["Stopped time"] = format_time(moving_data.stopped_time)
+        out_object["Max speed"] = f'{format_speed(moving_data.max_speed)} (raw: {format_speed(raw_moving_data.max_speed) if raw_moving_data else "?"})'
+        out_object["Avg speed"] = format_speed(moving_data.moving_distance / moving_data.moving_time) if moving_data.moving_time > 0 else "?"
         if direct_print:
             print(f'{indentation}Moving time: {format_time(moving_data.moving_time)}')
             print(f'{indentation}Stopped time: {format_time(moving_data.stopped_time)}')
@@ -84,8 +84,8 @@ indentation: str='    ', direct_print=False) :
             print(f'{indentation}Avg speed: {format_speed(moving_data.moving_distance / moving_data.moving_time) if moving_data.moving_time > 0 else "?"}')
 
     uphill, downhill = gpx_part.get_uphill_downhill()
-    out_object["Total uphill"] = f'"{format_short_length(uphill)}", '
-    out_object["Total downhill"] = f'"{format_short_length(downhill)}", '
+    out_object["Total uphill"] = format_short_length(uphill)
+    out_object["Total downhill"] = format_short_length(downhill)
     if direct_print:
         print(f'{indentation}Total uphill: {format_short_length(uphill)}')
         print(f'{indentation}Total downhill: {format_short_length(downhill)}')
@@ -122,7 +122,7 @@ indentation: str='    ', direct_print=False) :
 
 def print_gpx_info(gpx: mod_gpx.GPX, gpx_file: str, direct_print=False) -> None:
     out_obj = {}
-    out_obj["File"] = gpx_file
+    # out_obj["File"] = gpx_file
     if direct_print:
         print(f'File: {gpx_file}')
 
@@ -143,13 +143,14 @@ def print_gpx_info(gpx: mod_gpx.GPX, gpx_file: str, direct_print=False) -> None:
 
     out_obj['part info'] = print_gpx_part_info(gpx, direct_print=direct_print);
 
-    out_obj["tracks_segments"] = {}
+    out_obj["tracks_segments"] = []
 
     for track_no, track in enumerate(gpx.tracks):
+        out_obj["tracks_segments"].append([])
         for segment_no, segment in enumerate(track.segments):
             part_info = print_gpx_part_info(segment, direct_print=direct_print)
-            seg = f'Track #{track_no}, Segment #{segment_no}'
-            out_obj["tracks_segments"][seg] = part_info
+            # seg = f'Track #{track_no}, Segment #{segment_no}'
+            out_obj["tracks_segments"][track_no].append(part_info)
             if direct_print:
                 print(f'    Track #{track_no}, Segment #{segment_no}')
                 print_gpx_part_info(segment, indentation='        ')
