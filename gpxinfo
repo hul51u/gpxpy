@@ -115,7 +115,8 @@ indentation: str='    ', direct_print=False) :
         if direct_print:
             print(f'{indentation}Avg distance between points: {format_short_length(sum(distances) / len(list(gpx_part.walk())))}')
 
-    print('')
+    if direct_print:
+        print('')
     return out_object
 
 
